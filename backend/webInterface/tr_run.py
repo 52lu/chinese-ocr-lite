@@ -1,49 +1,47 @@
-
-
 import time
-from model import  OcrHandle
+from model import OcrHandle
 import tornado.web
 import tornado.gen
 import tornado.httpserver
 import base64
-from PIL import Image, ImageDraw,ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import datetime
 import json
 import os
+import re
 
 from backend.tools.np_encoder import NpEncoder
 from backend.tools import log
 import logging
 
-logger = logging.getLogger(log.LOGGER_ROOT_NAME + '.' +__name__)
+logger = logging.getLogger(log.LOGGER_ROOT_NAME + '.' + __name__)
 
 ocrhandle = OcrHandle()
 
-
 request_time = {}
 now_time = time.strftime("%Y-%m-%d", time.localtime(time.time()))
-from config import max_post_time ,dbnet_max_size,white_ips
+from config import max_post_time, dbnet_max_size, white_ips
 
 
 class TrRun(tornado.web.RequestHandler):
-    '''
+    """
     使用 tr 的 run 方法
-    '''
-        
+    """
+
     def get(self):
         self.set_status(404)
         self.write("404 : Please use POST")
 
     @tornado.gen.coroutine
     def post(self):
-        '''
+        """
 
         :return:
         报错：
         400 没有请求参数
 
-        '''
+        """
         start_time = time.time()
         short_size = 960
         global now_time
@@ -87,13 +85,12 @@ class TrRun(tornado.web.RequestHandler):
             self.finish(error_log)
             return
         img = img.convert("RGB")
-        
-        time_now = time.strftime("%Y-%m-%d-%H_%M_%S",time.localtime(time.time()))
+
+        time_now = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
         time_day = time.strftime("%Y-%m-%d", time.localtime(time.time()))
         if time_day != now_time:
             now_time = time_day
             request_time = {}
-        
 
         '''
         是否开启图片压缩
@@ -104,9 +101,9 @@ class TrRun(tornado.web.RequestHandler):
         res = []
         do_det = True
         remote_ip_now = self.request.remote_ip
-        if remote_ip_now not in request_time :
-            request_time[remote_ip_now] = 1 
-        elif request_time[remote_ip_now] > max_post_time -1 and remote_ip_now not in white_ips  :
+        if remote_ip_now not in request_time:
+            request_time[remote_ip_now] = 1
+        elif request_time[remote_ip_now] > max_post_time - 1 and remote_ip_now not in white_ips:
             res.append("今天访问次数超过{}次！".format(max_post_time))
             do_det = False
         else:
@@ -127,8 +124,7 @@ class TrRun(tornado.web.RequestHandler):
                 res.append("短边尺寸过小，请调整短边尺寸")
                 do_det = False
 
-            short_size = 32 * (short_size//32)
-
+            short_size = 32 * (short_size // 32)
 
         img_w, img_h = img.size
         if max(img_w, img_h) * (short_size * 1.0 / min(img_w, img_h)) > dbnet_max_size:
@@ -138,10 +134,9 @@ class TrRun(tornado.web.RequestHandler):
             # self.finish(json.dumps({'code': 400, 'msg': '图片reize后长边过长，请调整短边尺寸'}, cls=NpEncoder))
             # return
 
-
         if do_det:
 
-            res = ocrhandle.text_predict(img,short_size)
+            res = ocrhandle.text_predict(img, short_size)
 
             img_detected = img.copy()
             img_draw = ImageDraw.Draw(img_detected)
@@ -150,23 +145,23 @@ class TrRun(tornado.web.RequestHandler):
             for i, r in enumerate(res):
                 rect, txt, confidence = r
 
-                x1,y1,x2,y2,x3,y3,x4,y4 = rect.reshape(-1)
-                size = max(min(x2-x1,y3-y2) // 2 , 20 )
+                x1, y1, x2, y2, x3, y3, x4, y4 = rect.reshape(-1)
+                size = max(min(x2 - x1, y3 - y2) // 2, 20)
 
-                myfont = ImageFont.truetype(os.path.join(os.getcwd(), "仿宋_GB2312.ttf"), size=size)
+                myfont = ImageFont.truetype(os.path.join(os.getcwd(), "fangsong_GB2312.ttf"), size=size)
                 fillcolor = colors[i % len(colors)]
-                img_draw.text((x1, y1 - size ), str(i+1), font=myfont, fill=fillcolor)
-                for xy in [(x1, y1, x2, y2), (x2, y2, x3, y3 ), (x3 , y3 , x4, y4), (x4, y4, x1, y1)]:
+                img_draw.text((x1, y1 - size), str(i + 1), font=myfont, fill=fillcolor)
+                for xy in [(x1, y1, x2, y2), (x2, y2, x3, y3), (x3, y3, x4, y4), (x4, y4, x1, y1)]:
                     img_draw.line(xy=xy, fill=colors[i % len(colors)], width=2)
 
             output_buffer = BytesIO()
             img_detected.save(output_buffer, format='JPEG')
             byte_data = output_buffer.getvalue()
             img_detected_b64 = base64.b64encode(byte_data).decode('utf8')
-        
+
         else:
             output_buffer = BytesIO()
-            img.save(output_buffer, format='JPEG') 
+            img.save(output_buffer, format='JPEG')
             byte_data = output_buffer.getvalue()
             img_detected_b64 = base64.b64encode(byte_data).decode('utf8')
 
@@ -175,10 +170,57 @@ class TrRun(tornado.web.RequestHandler):
             'return': res,
             'time': time_now
         }
+        txt_list = []
+        for text in res:
+            txt_list.append(text[1])
+        # 解析身份证信息
+        id_info = {}
+        try:
+            id_info = self.parseIdCard(res)
+        except Exception as ex:
+            log_info['err'] = ex
+            logger.error(json.dumps({'error': log_info}, cls=NpEncoder))
+            self.finish(json.dumps({'code': 410, 'msg': '身份证识别失败~'}, cls=NpEncoder))
+            return
+
+        # 输出
         logger.info(json.dumps(log_info, cls=NpEncoder))
         self.finish(json.dumps(
             {'code': 200, 'msg': '成功',
-             'data': {'img_detected': 'data:image/jpeg;base64,' + img_detected_b64, 'raw_out': res,
-                      'speed_time': round(time.time() - start_time, 2)}},
+             'data': {
+                 'img_detected': 'data:image/jpeg;base64,' + img_detected_b64,
+                 'raw_out': res,
+                 'speed_time': round(time.time() - start_time, 2),
+                 'id_info': id_info,
+                 'txt_list': txt_list,
+             }},
             cls=NpEncoder))
         return
+
+    def parseIdCard(self, res):
+        ocr_type = self.get_argument('ocr_type', None)
+        if ocr_type is None:
+            return []
+        # 解析身份证信息
+        id_info = {
+            'id_number': '',  # 身份证号码
+            'name': '',  # 姓名
+            'sex': '',  # 性别
+            'birthday': '',  # 生日
+            'address': '',  # 户籍地址
+            'nation': '',  # 民族
+        }
+        for text in res:
+            txt = text[1]
+            if "身份号码" in txt or "公民" in txt:
+                id_info['id_number'] = re.findall(r"\d+", txt)
+            if "出生" in txt and "年" in txt:
+                id_info['birthday'] = re.findall(r"\d+", txt)
+            if "民族" in txt:
+                id_info['nation'] = txt.replace('民族', '')
+            if "性别" in txt:
+                id_info['sex'] = txt.replace('性别', '')
+            if "姓名" in txt:
+                id_info['name'] = txt.replace('姓名', '')
+
+        return id_info

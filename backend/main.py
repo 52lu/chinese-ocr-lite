@@ -16,6 +16,7 @@ from backend.tools import log
 import logging
 logger = logging.getLogger(log.LOGGER_ROOT_NAME+'.'+__name__)
 
+logger
 current_path = os.path.dirname(__file__)
 settings = dict(
     # debug=True,
