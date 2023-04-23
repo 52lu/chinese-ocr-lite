@@ -18,7 +18,7 @@ angle_detect = True
 angle_detect_num = 30
 angle_net_path = os.path.join(father_path, "models/angle_net.onnx")
 
-max_post_time = 10000  # ip 访问最大次数
+max_post_time = 100000  #  单日ip 访问最大次数
 
 from crnn.keys import alphabetChinese as alphabet
 
