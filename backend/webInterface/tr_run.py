@@ -261,17 +261,4 @@ class TrRun(tornado.web.RequestHandler):
             addressBacked = addressBackedList[1]
 
         id_info['address'] = addressFront + addressBacked
-        # for text in res:
-        #     txt = text[1]
-        #     if "身份号码" in txt or "公民" in txt:
-        #         id_info['id_number'] = re.findall(r"\d+", txt)
-        #     if "出生" in txt and "年" in txt:
-        #         id_info['birthday'] = re.findall(r"\d+", txt)
-        #     if "民族" in txt:
-        #         id_info['nation'] = txt.replace('民族', '')
-        #     if "性别" in txt:
-        #         id_info['sex'] = txt.replace('性别', '')
-        #     if "姓名" in txt:
-        #         id_info['name'] = txt.replace('姓名', '')
-
         return id_info
