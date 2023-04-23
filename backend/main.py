@@ -15,8 +15,8 @@ from backend.webInterface import tr_index
 from backend.tools import log
 import logging
 logger = logging.getLogger(log.LOGGER_ROOT_NAME+'.'+__name__)
+logger.setLevel(logging.DEBUG)
 
-logger
 current_path = os.path.dirname(__file__)
 settings = dict(
     # debug=True,

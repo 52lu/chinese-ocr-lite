@@ -48,7 +48,7 @@ class TrRun(tornado.web.RequestHandler):
         global request_time
         img_up = self.request.files.get('file', None)
         img_b64 = self.get_argument('img', None)
-        compress_size = self.get_argument('compress', None)
+        compress_size = self.get_argument('compress', short_size)
 
         # 判断是上传的图片还是base64
         self.set_header('content-type', 'application/json')
@@ -174,9 +174,8 @@ class TrRun(tornado.web.RequestHandler):
         for text in res:
             txt_list.append(text[1])
         # 解析身份证信息
-        id_info = {}
         try:
-            id_info = self.parseIdCard(res)
+            id_info = self.parseIdCard(txt_list)
         except Exception as ex:
             log_info['err'] = ex
             logger.error(json.dumps({'error': log_info}, cls=NpEncoder))
@@ -197,7 +196,7 @@ class TrRun(tornado.web.RequestHandler):
             cls=NpEncoder))
         return
 
-    def parseIdCard(self, res):
+    def parseIdCard(self, txt_list):
         ocr_type = self.get_argument('ocr_type', None)
         if ocr_type is None:
             return []
@@ -210,17 +209,69 @@ class TrRun(tornado.web.RequestHandler):
             'address': '',  # 户籍地址
             'nation': '',  # 民族
         }
-        for text in res:
-            txt = text[1]
+
+        # 判断是否倒着上传
+        positiveStr = txt_list[0]
+        isPositiveUpload = True
+        if "身份号码" in positiveStr or "公民" in positiveStr:
+            isPositiveUpload = False
+
+        # 户籍地址组成部分
+        addressFrontIndex = 0
+        addressBackedIndex = 0
+
+        for k, text in enumerate(txt_list):
+            text = text.replace(" ", "")
+            txt = text.split("、", 1)[1]
             if "身份号码" in txt or "公民" in txt:
-                id_info['id_number'] = re.findall(r"\d+", txt)
+                pattern = r'号码(.*)'
+                match = re.search(pattern, txt)
+                if match:
+                    id_info['id_number'] = match.group(1)
             if "出生" in txt and "年" in txt:
-                id_info['birthday'] = re.findall(r"\d+", txt)
+                birthdayList = re.findall(r"\d+", txt)
+                id_info['birthday'] = birthdayList[0] + '-' + birthdayList[1] + '-' + birthdayList[2]
             if "民族" in txt:
-                id_info['nation'] = txt.replace('民族', '')
+                pattern = r'民族(.*)'
+                match = re.search(pattern, txt)
+                if match:
+                    id_info['nation'] = match.group(1)
             if "性别" in txt:
-                id_info['sex'] = txt.replace('性别', '')
+                pattern = r'性别([\u4e00-\u9fa5])'
+                match = re.search(pattern, txt)
+                if match:
+                    id_info['sex'] = match.group(1)
             if "姓名" in txt:
                 id_info['name'] = txt.replace('姓名', '')
+            if "住址" in txt:
+                addressFrontIndex = k
+                if isPositiveUpload:
+                    addressBackedIndex = addressFrontIndex + 1
+                else:
+                    addressBackedIndex = addressFrontIndex - 1
+
+        addressFrontList = txt_list[addressFrontIndex].replace(" ", "").split("、", 1)
+        addressFront = ''
+        addressBacked = ''
+        if len(addressFrontList) > 1:
+            addressFront = addressFrontList[1].replace('住址', '')
+
+        addressBackedList = txt_list[addressBackedIndex].replace(" ", "").split("、", 1)
+        if len(addressBackedList) > 1:
+            addressBacked = addressBackedList[1]
+
+        id_info['address'] = addressFront + addressBacked
+        # for text in res:
+        #     txt = text[1]
+        #     if "身份号码" in txt or "公民" in txt:
+        #         id_info['id_number'] = re.findall(r"\d+", txt)
+        #     if "出生" in txt and "年" in txt:
+        #         id_info['birthday'] = re.findall(r"\d+", txt)
+        #     if "民族" in txt:
+        #         id_info['nation'] = txt.replace('民族', '')
+        #     if "性别" in txt:
+        #         id_info['sex'] = txt.replace('性别', '')
+        #     if "姓名" in txt:
+        #         id_info['name'] = txt.replace('姓名', '')
 
         return id_info
