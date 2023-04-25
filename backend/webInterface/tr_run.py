@@ -183,16 +183,16 @@ class TrRun(tornado.web.RequestHandler):
             return
 
         data = {
-            'speed_time':round(time.time() - start_time, 2),
+            'speed_time': round(time.time() - start_time, 2),
             'txt_list': txt_list
         }
         ocr_type = self.get_argument('ocr_type', None)
+        data['ocr_type'] = ocr_type
         if ocr_type is None:
             data['img_detected'] = 'data:image/jpeg;base64,' + img_detected_b64
             data['raw_out'] = res
         else:
             data['id_info'] = id_info
-
 
         # 输出
         logger.info(json.dumps(log_info, cls=NpEncoder))
@@ -201,7 +201,7 @@ class TrRun(tornado.web.RequestHandler):
                 'code': 200,
                 'msg': '成功',
                 'data': data
-             },
+            },
             cls=NpEncoder))
         return
 
