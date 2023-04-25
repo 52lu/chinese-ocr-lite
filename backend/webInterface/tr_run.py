@@ -182,17 +182,26 @@ class TrRun(tornado.web.RequestHandler):
             self.finish(json.dumps({'code': 410, 'msg': '身份证识别失败~'}, cls=NpEncoder))
             return
 
+        data = {
+            'speed_time':round(time.time() - start_time, 2),
+            'txt_list': txt_list
+        }
+        ocr_type = self.get_argument('ocr_type', None)
+        if ocr_type is None:
+            data['img_detected'] = 'data:image/jpeg;base64,' + img_detected_b64
+            data['raw_out'] = res
+        else:
+            data['id_info'] = id_info
+
+
         # 输出
         logger.info(json.dumps(log_info, cls=NpEncoder))
         self.finish(json.dumps(
-            {'code': 200, 'msg': '成功',
-             'data': {
-                 'img_detected': 'data:image/jpeg;base64,' + img_detected_b64,
-                 'raw_out': res,
-                 'speed_time': round(time.time() - start_time, 2),
-                 'id_info': id_info,
-                 'txt_list': txt_list,
-             }},
+            {
+                'code': 200,
+                'msg': '成功',
+                'data': data
+             },
             cls=NpEncoder))
         return
 
