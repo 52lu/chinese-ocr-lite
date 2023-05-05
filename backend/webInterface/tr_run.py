@@ -251,12 +251,10 @@ class TrRun(tornado.web.RequestHandler):
                 match = re.search(pattern, txt)
                 if match:
                     id_info['sex'] = match.group(1)
-            # if "姓名" in txt:
-            #     id_info['name'] = txt.replace('姓名', '')
             if "名" in txt:
-                print("名字匹配:", txt)
                 if "姓名" in txt:
                     id_info['name'] = txt.replace('姓名', '')
+                    break
 
                 if id_info['name'] == '':
                     pattern = r'名(.*)'
