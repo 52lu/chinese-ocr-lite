@@ -195,7 +195,7 @@ class TrRun(tornado.web.RequestHandler):
             data['id_info'] = id_info
 
         # 输出
-        logger.info(json.dumps(log_info, cls=NpEncoder))
+        logger.info(json.dumps(data, cls=NpEncoder))
         self.finish(json.dumps(
             {
                 'code': 200,
