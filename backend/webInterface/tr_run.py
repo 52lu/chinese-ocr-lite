@@ -196,6 +196,7 @@ class TrRun(tornado.web.RequestHandler):
 
         # 输出
         logger.info(json.dumps(data, cls=NpEncoder))
+
         self.finish(json.dumps(
             {
                 'code': 200,
@@ -250,8 +251,18 @@ class TrRun(tornado.web.RequestHandler):
                 match = re.search(pattern, txt)
                 if match:
                     id_info['sex'] = match.group(1)
-            if "姓名" in txt:
-                id_info['name'] = txt.replace('姓名', '')
+            # if "姓名" in txt:
+            #     id_info['name'] = txt.replace('姓名', '')
+            if "名" in txt:
+                print("名字匹配:", txt)
+                if "姓名" in txt:
+                    id_info['name'] = txt.replace('姓名', '')
+
+                if id_info['name'] == '':
+                    pattern = r'名(.*)'
+                    match = re.search(pattern, txt)
+                    if match:
+                        id_info['name'] = match.group(1)
             if "住址" in txt:
                 addressFrontIndex = k
                 if isPositiveUpload:

@@ -1,13 +1,13 @@
 import re
 
 txt_list = [
-    "1、 鞋名刘庆辉"
-    "2、 性别男i"
-    "3、 民族汉"
-    "4、 出生1989年3月4日"
-    "5、 住址安微省临泉具范兴集乡刘"
-    "6、 营行政村东刘营6号"
-    "7、 公民身份号码341221198903048135"
+    "1、 鞋名刘庆辉",
+    "2、 性别男i",
+    "3、 民族汉",
+    "4、 出生1989年3月4日",
+    "5、 住址安微省临泉具范兴集乡刘",
+    "6、 营行政村东刘营6号",
+    "7、 公民身份号码341221198903048135",
 ]
 # 解析身份证信息
 id_info = {
@@ -29,8 +29,7 @@ addressFrontIndex = 0
 addressBackedIndex = 0
 
 for k, str in enumerate(txt_list):
-    print('k：', k)
-    print('str：')
+    print('str：',str)
     str = str.replace(" ", "")
     txt = str.split("、", 1)[1]
     if "身份号码" in txt or "公民" in txt:
@@ -48,8 +47,15 @@ for k, str in enumerate(txt_list):
         match = re.search(pattern, txt)
         if match:
             id_info['sex'] = match.group(1)
-    if "姓名" in txt:
-        id_info['name'] = txt.replace('姓名', '')
+    if "名" in txt:
+        print("名字匹配:", txt)
+        if "姓名" in txt:
+            id_info['name'] = txt.replace('姓名', '')
+        if id_info['name'] == '':
+            pattern = r'名(.*)'
+            match = re.search(pattern, txt)
+            if match:
+                id_info['name'] = match.group(1)
     if "住址" in txt:
         addressFrontIndex = k
         if isPositiveUpload:
