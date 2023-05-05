@@ -195,7 +195,8 @@ class TrRun(tornado.web.RequestHandler):
             data['id_info'] = id_info
 
         # 输出
-        logger.info(json.dumps(data, cls=NpEncoder))
+        log_info['data'] = data
+        logger.info(json.dumps(log_info, cls=NpEncoder))
 
         self.finish(json.dumps(
             {
@@ -221,6 +222,8 @@ class TrRun(tornado.web.RequestHandler):
         }
 
         # 判断是否倒着上传
+        if len(txt_list) == 0:
+            return []
         positiveStr = txt_list[0]
         isPositiveUpload = True
         if "身份号码" in positiveStr or "公民" in positiveStr:
