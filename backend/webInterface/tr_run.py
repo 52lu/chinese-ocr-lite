@@ -172,7 +172,7 @@ class TrRun(tornado.web.RequestHandler):
         }
         txt_list = []
         for text in res:
-            txt_list.append(text[1])
+            txt_list.append(text[1].strip())
         # 解析身份证信息
         try:
             id_info = self.parseIdCard(txt_list)
@@ -236,6 +236,7 @@ class TrRun(tornado.web.RequestHandler):
         for k, text in enumerate(txt_list):
             text = text.replace(" ", "")
             txt = text.split("、", 1)[1]
+
             if "身份号码" in txt or "公民" in txt:
                 pattern = r'号码(.*)'
                 match = re.search(pattern, txt)
@@ -270,6 +271,10 @@ class TrRun(tornado.web.RequestHandler):
                     addressBackedIndex = addressFrontIndex + 1
                 else:
                     addressBackedIndex = addressFrontIndex - 1
+            # 身份证二次提取
+            if len(txt) == 15 or len(txt) == 18:
+                if id_info['id_number'] == '':
+                    id_info['id_number'] = txt
 
         if addressFrontIndex is not None:
             addressFrontList = txt_list[addressFrontIndex].replace(" ", "").split("、", 1)
