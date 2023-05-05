@@ -43,12 +43,12 @@ class TrRun(tornado.web.RequestHandler):
 
         """
         start_time = time.time()
-        short_size = 960
+        # short_size = 960
         global now_time
         global request_time
         img_up = self.request.files.get('file', None)
         img_b64 = self.get_argument('img', None)
-        compress_size = self.get_argument('compress', short_size)
+        compress_size = self.get_argument('compress', None)
 
         # 判断是上传的图片还是base64
         self.set_header('content-type', 'application/json')
@@ -69,6 +69,7 @@ class TrRun(tornado.web.RequestHandler):
 
         width, height = img.size  # 获取图片的长和宽
         logger.info(json.dumps({'img.width': width, 'height': height}, cls=NpEncoder))
+        short_size = height
 
         try:
             if hasattr(img, '_getexif') and img._getexif() is not None:
