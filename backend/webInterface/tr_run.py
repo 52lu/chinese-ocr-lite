@@ -227,8 +227,8 @@ class TrRun(tornado.web.RequestHandler):
             isPositiveUpload = False
 
         # 户籍地址组成部分
-        addressFrontIndex = 0
-        addressBackedIndex = 0
+        addressFrontIndex = None
+        addressBackedIndex = None
 
         for k, text in enumerate(txt_list):
             text = text.replace(" ", "")
@@ -268,15 +268,16 @@ class TrRun(tornado.web.RequestHandler):
                 else:
                     addressBackedIndex = addressFrontIndex - 1
 
-        addressFrontList = txt_list[addressFrontIndex].replace(" ", "").split("、", 1)
-        addressFront = ''
-        addressBacked = ''
-        if len(addressFrontList) > 1:
-            addressFront = addressFrontList[1].replace('住址', '')
+        if addressFrontIndex is not None:
+            addressFrontList = txt_list[addressFrontIndex].replace(" ", "").split("、", 1)
+            addressFront = ''
+            addressBacked = ''
+            if len(addressFrontList) > 1:
+                addressFront = addressFrontList[1].replace('住址', '')
 
-        addressBackedList = txt_list[addressBackedIndex].replace(" ", "").split("、", 1)
-        if len(addressBackedList) > 1:
-            addressBacked = addressBackedList[1]
+            addressBackedList = txt_list[addressBackedIndex].replace(" ", "").split("、", 1)
+            if len(addressBackedList) > 1:
+                addressBacked = addressBackedList[1]
+            id_info['address'] = addressFront + addressBacked
 
-        id_info['address'] = addressFront + addressBacked
         return id_info
