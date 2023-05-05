@@ -67,6 +67,8 @@ class TrRun(tornado.web.RequestHandler):
             self.finish(json.dumps({'code': 400, 'msg': '没有传入参数'}, cls=NpEncoder))
             return
 
+        logger.info(json.dumps({'img.size': img.size, 'img': img}, cls=NpEncoder))
+
         try:
             if hasattr(img, '_getexif') and img._getexif() is not None:
                 orientation = 274
