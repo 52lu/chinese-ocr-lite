@@ -191,6 +191,7 @@ class TrRun(tornado.web.RequestHandler):
         if ocr_type is None:
             data['img_detected'] = 'data:image/jpeg;base64,' + img_detected_b64
             data['raw_out'] = res
+            data['id_info'] = id_info
         else:
             data['id_info'] = id_info
 
@@ -208,9 +209,9 @@ class TrRun(tornado.web.RequestHandler):
         return
 
     def parseIdCard(self, txt_list):
-        ocr_type = self.get_argument('ocr_type', None)
-        if ocr_type is None:
-            return []
+        # ocr_type = self.get_argument('ocr_type', 1)
+        # if ocr_type is None:
+        #     return []
         # 解析身份证信息
         id_info = {
             'id_number': '',  # 身份证号码
