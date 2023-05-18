@@ -259,7 +259,7 @@ class TrRun(tornado.web.RequestHandler):
             if "名" in txt:
                 if "姓名" in txt:
                     id_info['name'] = txt.replace('姓名', '')
-                    break
+                    continue
 
                 if id_info['name'] == '':
                     pattern = r'名(.*)'
